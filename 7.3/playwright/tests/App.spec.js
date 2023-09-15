@@ -1,22 +1,47 @@
 const { test, expect } = require("@playwright/test");
+const {
+  validEmail,
+  validPassword,
+  invalidEmail,
+  invalidPassword,
+} = require("../user.js");
 
-test("test", async ({ page }) => {
-  // Go to https://netology.ru/free/management#/
-  await page.goto("https://netology.ru/free/management#/");
+test("test successful authorization", async ({ page }) => {
+  await page.goto("https://netology.ru/");
+  await page.click("//a[contains(text(),'Войти')]");
+  await expect(page).toHaveURL("https://netology.ru/?modal=sign_in");
+  await page.screenshot({
+    path: `screenshot/` + `LoginToYourPersonalAccount.png`,
+  });
+  await page.click("[placeholder ='Email']");
+  await page.fill("[placeholder ='Email']", validEmail);
+  await page.click("[name ='password']");
+  await page.fill("[name ='password']", validPassword);
+  await page.click("[data-testid ='login-submit-btn']");
+  await expect(page).toHaveURL("https://netology.ru/profile");
+  await expect(page.locator("//h2")).toContainText("Моё обучение");
+  await page.screenshot({
+    path: `screenshot/` + `PersonalAccount.png`,
+  });
+});
 
-  // Click a
-  await page.click("a");
-  await expect(page).toHaveURL("https://netology.ru/");
+test("test unsuccessful authorization", async ({ page }) => {
+  await page.goto("https://netology.ru/");
+  await page.click("//a[contains(text(),'Войти')]");
+  await expect(page).toHaveURL("https://netology.ru/?modal=sign_in");
+  await page.click("[placeholder ='Email']");
+  await page.fill("[placeholder ='Email']", invalidEmail);
+  await page.click("[name ='password']");
+  await page.fill("[name ='password']", invalidPassword);
+  await page.click("[data-testid ='login-submit-btn']");
 
-  // Click text=Учиться бесплатно
-  await page.click("text=Учиться бесплатно");
-  await expect(page).toHaveURL("https://netology.ru/free");
-
-  page.click("text=Бизнес и управление");
-
-  // Click text=Как перенести своё дело в онлайн
-  await page.click("text=Как перенести своё дело в онлайн");
-  await expect(page).toHaveURL(
-    "https://netology.ru/programs/kak-perenesti-svoyo-delo-v-onlajn-bp"
+  const errorMessage = await page.locator("[data-testid ='login-error-hint']");
+  //expect(await errorMessage.isVisible()).toBe(true);
+  await expect(errorMessage).toHaveText(
+    "Вы ввели неправильно логин или пароль"
   );
+  await expect(errorMessage).toBeVisible();
+  await page.screenshot({
+    path: `screenshot/` + `LoginError.png`,
+  });
 });
